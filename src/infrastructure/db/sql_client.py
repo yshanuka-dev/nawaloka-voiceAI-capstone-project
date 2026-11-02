@@ -111,6 +111,11 @@ def get_sql_engine():
                 "Switch to port 6543 (transaction pooler) for chat-grade concurrency."
             )
 
+        # In Python 3.13, SQLAlchemy 2.0 defaults 'postgresql://' to psycopg v3.
+        # Explicitly use psycopg2 driver if no specific driver is specified.
+        if db_url.startswith("postgresql://"):
+            db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
         _engine = create_engine(
             db_url,
             pool_size=8,

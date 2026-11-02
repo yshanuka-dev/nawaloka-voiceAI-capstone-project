@@ -4,10 +4,13 @@ configured Supabase Postgres. Idempotent — uses ``CREATE TABLE IF NOT
 EXISTS`` so re-running is safe.
 
 Usage:
-    PYTHONPATH=src .venv/bin/python scripts/init_chat_sessions.py
+    uv run python scripts/init_chat_sessions.py
 """
 
 from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from dotenv import load_dotenv
 load_dotenv(".env")
@@ -21,14 +24,12 @@ SQL_FILE = Path(__file__).resolve().parent.parent / "sql" / "07_chat_sessions.sq
 
 
 def main() -> None:
-    ddl = SQL_FILE.read_text()
+    ddl = SQL_FILE.read_text(encoding="utf-8")
     engine = get_sql_engine()
 
-    print(f"Applying {SQL_FILE.name} …")
+    print(f"Applying {SQL_FILE.name}...")
 
-    # Strip line-comments first, then split on semicolons. The previous
-    # version filtered out any statement that *started* with a comment,
-    # which silently dropped the CREATE TABLE.
+    # Strip line-comments first, then split on semicolons.
     cleaned_lines = [
         line for line in ddl.splitlines()
         if not line.lstrip().startswith("--")
@@ -42,7 +43,7 @@ def main() -> None:
     # Sanity check
     with engine.connect() as conn:
         n = conn.execute(text("SELECT count(*) FROM chat_sessions")).scalar()
-    print(f"✓ chat_sessions table ready ({n} existing row(s)).")
+    print(f"[SUCCESS] chat_sessions table ready ({n} existing row(s)).")
 
 
 if __name__ == "__main__":

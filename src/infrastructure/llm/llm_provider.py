@@ -26,6 +26,7 @@ from infrastructure.config import (
     FAST_CHAT_MODEL,
     FAST_CHAT_PROVIDER,
     OPENROUTER_BASE_URL,
+    LLM_MAX_TOKENS,
     get_api_key,
 )
 
@@ -109,6 +110,12 @@ def _build_llm(
         logger.info("Groq→OpenRouter failover: {} → {}", model, fallback_model)
         provider, model = "openrouter", fallback_model
 
+    # OpenRouter requires an explicit max_tokens bound. If None, it assumes
+    # the model's full context ceiling (up to 65k-128k tokens) which rejects
+    # calls with 402 if total key balance is lower than 65k tokens.
+    if max_tokens is None:
+        max_tokens = int(os.getenv("LLM_MAX_TOKENS", LLM_MAX_TOKENS or 2048))
+
     llm_kwargs: dict[str, Any] = dict(
         model=model,
         temperature=temperature,
@@ -118,13 +125,21 @@ def _build_llm(
     )
 
     if provider == "openrouter":
+        key = get_api_key("openrouter")
+        llm_kwargs["base_url"] = OPENROUTER_BASE_URL
+        llm_kwargs["api_key"] = key
         llm_kwargs["openai_api_base"] = OPENROUTER_BASE_URL
-        llm_kwargs["openai_api_key"] = get_api_key("openrouter")
+        llm_kwargs["openai_api_key"] = key
     elif provider == "groq":
+        key = get_api_key("groq")
+        llm_kwargs["base_url"] = GROQ_BASE_URL
+        llm_kwargs["api_key"] = key
         llm_kwargs["openai_api_base"] = GROQ_BASE_URL
-        llm_kwargs["openai_api_key"] = get_api_key("groq")
+        llm_kwargs["openai_api_key"] = key
     elif provider == "openai":
-        llm_kwargs["openai_api_key"] = get_api_key("openai")
+        key = get_api_key("openai")
+        llm_kwargs["api_key"] = key
+        llm_kwargs["openai_api_key"] = key
 
     return ChatOpenAI(**llm_kwargs)
 

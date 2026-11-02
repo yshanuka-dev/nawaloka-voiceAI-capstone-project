@@ -81,6 +81,8 @@ Weeks_15*.pdf
 # ── Local data / scratch ──────────────────────────────────────────
 data/*
 !data/.gitkeep
+!data/knowledge_base/
+!data/knowledge_base/**
 logs/
 *.log
 

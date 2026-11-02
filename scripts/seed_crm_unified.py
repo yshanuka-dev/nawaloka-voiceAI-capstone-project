@@ -516,7 +516,7 @@ class JSONLStorageAdapter(StorageAdapter):
     
     def finalize(self):
         """Write to file."""
-        with open(self.config.output_file, 'w') as f:
+        with open(self.config.output_file, 'w', encoding="utf-8") as f:
             for booking in self.bookings:
                 f.write(json.dumps(booking) + '\n')
         self.logger.info(f"✓ Wrote {len(self.bookings)} bookings to {self.config.output_file}")
